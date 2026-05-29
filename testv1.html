@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>価格管理ソフト</title>
+
+<style>
+
+*{
+    box-sizing: border-box;
+}
+
+body{
+    margin: 0;
+    font-family: sans-serif;
+    background: #f5f5f5;
+}
+
+header{
+    background: #222;
+    color: white;
+    padding: 15px 20px;
+}
+
+main{
+    display: flex;
+    height: calc(100vh - 70px);
+}
+
+/* =========================
+   左
+========================= */
+
+.left-area{
+    width: 300px;
+    background: white;
+    border-right: 1px solid #ccc;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.product-list{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.product-item{
+    background: #f0f0f0;
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.product-item:hover{
+    background: #ddd;
+}
+
+.product-item.active{
+    background: #222;
+    color: white;
+}
+
+/* =========================
+   右
+========================= */
+
+.right-area{
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.top-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-button{
+    border: none;
+    background: #222;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+/* =========================
+   カード
+========================= */
+
+.rank-card{
+    margin-top: 15px;
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.rank-card:hover{
+    transform: translateY(-2px);
+}
+
+.rank-top{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rank-number{
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.unit-price{
+    font-size: 24px;
+    font-weight: bold;
+    color: #009688;
+}
+
+.shop-name{
+    font-size: 22px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.info-row{
+    margin-top: 10px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.sale-badge{
+    margin-top: 12px;
+    display: inline-block;
+    background: red;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 999px;
+}
+
+/* =========================
+   モーダル
+========================= */
+
+.modal{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hidden{
+    display: none;
+}
+
+.modal-content{
+    width: 500px;
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+}
+
+.form-grid{
+    margin-top: 20px;
+
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 15px;
+}
+
+.form-grid input{
+    padding: 10px;
+}
+
+.modal-buttons{
+    margin-top: 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-buttons button{
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.delete-button{
+    background: red;
+    color: white;
+}
+
+/* =========================
+   商品画像
+========================= */
+
+.product-row{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-image{
+    width: 60px;
+    height: 60px;
+
+    object-fit: cover;
+
+    border-radius: 12px;
+
+    background: #ddd;
+
+    flex-shrink: 0;
+}
+
+.product-name{
+    font-size: 16px;
+    font-weight: bold;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+    <h1>価格管理ソフト</h1>
+</header>
+
+<main>
+
+    <!-- 左 -->
+
+    <section class="left-area">
+
+        <h2>商品一覧</h2>
+
+        <div id="productList" class="product-list"></div>
+
+    </section>
+
+    <!-- 右 -->
+
+    <section class="right-area">
+
+        <div class="top-row">
+
+            <h2 id="detailTitle">
+                商品を選択してください
+            </h2>
+
+            <button id="addButton" class="add-button">
+                ＋ 新規追加
+            </button>
+
+        </div>
+
+        <div id="rankingArea"></div>
+
+    </section>
+
+</main>
+
+<!-- モーダル -->
+
+<div id="modal" class="modal hidden">
+
+    <div class="modal-content">
+
+        <h2>商品編集</h2>
+
+        <div class="form-grid">
+
+            <label>商品名</label>
+            <input type="text" id="nameInput">
+
+            <label>店名</label>
+            <input type="text" id="shopInput">
+
+            <label>容量</label>
+            <input type="number" id="sizeInput">
+
+            <label>価格</label>
+            <input type="number" id="priceInput">
+
+            <label>ポイント</label>
+            <input type="number" id="pointInput">
+
+            <label>特売</label>
+            <input type="checkbox" id="saleInput">
+
+        </div>
+
+        <div class="modal-buttons">
+
+            <button id="saveButton">
+                保存
+            </button>
+
+            <button id="deleteButton" class="delete-button">
+                削除
+            </button>
+
+            <button id="closeButton">
+                閉じる
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+// ========================================
+// JSON読み込み
+// ========================================
+
+let data = [];
+
+async function loadJson(){
+
+    const response = await fetch("商品データ.json");
+
+    data = await response.json();
+
+    renderProductList();
+}
+
+// ========================================
+// 要素取得
+// ========================================
+
+const productList = document.getElementById("productList");
+
+const rankingArea = document.getElementById("rankingArea");
+
+const detailTitle = document.getElementById("detailTitle");
+
+const modal = document.getElementById("modal");
+
+const nameInput = document.getElementById("nameInput");
+const shopInput = document.getElementById("shopInput");
+const sizeInput = document.getElementById("sizeInput");
+const priceInput = document.getElementById("priceInput");
+const pointInput = document.getElementById("pointInput");
+const saleInput = document.getElementById("saleInput");
+
+let currentProductName = null;
+let currentEditId = null;
+
+// ========================================
+// 単価
+// ========================================
+
+function calcUnitPrice(item){
+
+    const finalPrice =
+        Number(item.price)
+        - Number(item.point || 0);
+
+    return finalPrice / Number(item.size);
+}
+
+// ========================================
+// 商品一覧
+// ========================================
+
+function renderProductList(){
+
+    productList.innerHTML = "";
+
+    // 商品名ごとに最初の商品を取得
+    const uniqueProducts = [];
+
+    const usedNames = new Set();
+
+    data.forEach(item => {
+
+        if(!usedNames.has(item.name)){
+
+            usedNames.add(item.name);
+
+            uniqueProducts.push(item);
+        }
+    });
+
+    uniqueProducts.forEach(item => {
+
+        const div = document.createElement("div");
+
+        div.className = "product-item";
+
+        if(item.name === currentProductName){
+            div.classList.add("active");
+        }
+
+        div.onclick = () => {
+
+            currentProductName = item.name;
+
+            renderProductList();
+
+            renderRanking(item.name);
+        };
+
+        // =========================
+        // 商品画像
+        // =========================
+
+        const imageHtml = item.image
+            ? `
+                <img
+                    src="${item.image}"
+                    class="product-image"
+                >
+            `
+            : "";
+
+        div.innerHTML = `
+
+            <div class="product-row">
+
+                ${imageHtml}
+
+                <div class="product-name">
+                    ${item.name}
+                </div>
+
+            </div>
+
+        `;
+
+        productList.appendChild(div);
+    });
+}
+
+// ========================================
+// ランキング
+// ========================================
+
+function renderRanking(name){
+
+    detailTitle.textContent = name;
+
+    rankingArea.innerHTML = "";
+
+    const items = data
+        .filter(v => v.name === name)
+        .sort((a,b) => {
+
+            return calcUnitPrice(a)
+                - calcUnitPrice(b);
+        });
+
+    items.forEach((item,index) => {
+
+        const card = document.createElement("div");
+
+        card.className = "rank-card";
+
+        const unitPrice = calcUnitPrice(item);
+
+        // ========================================
+        // 店名表示変換
+        // ========================================
+
+        let displayShopName = item.shop;
+
+        // ヨドバシ
+        if(item.shop.includes("https://www.yodobashi.com")){
+
+            displayShopName = "ヨドバシ";
+        }
+
+        // Amazon
+        else if(item.shop.includes("https://www.amazon.co.jp")){
+
+            displayShopName = "Amazon";
+        }
+
+        card.innerHTML = `
+
+            <div class="rank-top">
+
+                <div class="rank-number">
+                    ${index + 1}位
+                </div>
+
+                <div class="unit-price">
+                    ${unitPrice.toFixed(3)} 円/ml
+                </div>
+
+            </div>
+
+            <div class="shop-name">
+                ${displayShopName}
+            </div>
+
+            <div class="info-row">
+
+                <div>
+                    容量: ${item.size}ml
+                </div>
+
+                <div>
+                    価格: ${item.price}円
+                </div>
+
+                <div>
+                    ポイント: ${item.point}pt
+                </div>
+
+            </div>
+
+            ${item.sale ? `
+                <div class="sale-badge">
+                    特売
+                </div>
+            ` : ""}
+
+        `;
+
+        card.onclick = () => {
+            openEdit(item.id);
+        };
+
+        rankingArea.appendChild(card);
+    });
+}
+
+// ========================================
+// 編集
+// ========================================
+
+function openEdit(id){
+
+    const item =
+        data.find(v => v.id === id);
+
+    if(!item){
+        return;
+    }
+
+    currentEditId = id;
+
+    nameInput.value = item.name;
+    shopInput.value = item.shop;
+    sizeInput.value = item.size;
+    priceInput.value = item.price;
+    pointInput.value = item.point;
+    saleInput.checked = item.sale;
+
+    modal.classList.remove("hidden");
+}
+
+// ========================================
+// 新規追加
+// ========================================
+
+document.getElementById("addButton").onclick = () => {
+
+    currentEditId = null;
+
+    nameInput.value = "";
+    shopInput.value = "";
+    sizeInput.value = "";
+    priceInput.value = "";
+    pointInput.value = "";
+    saleInput.checked = false;
+
+    modal.classList.remove("hidden");
+};
+
+// ========================================
+// 保存
+// ========================================
+
+document.getElementById("saveButton").onclick = () => {
+
+    const item = {
+
+        id: currentEditId || Date.now(),
+
+        name: nameInput.value,
+
+        shop: shopInput.value,
+
+        size: Number(sizeInput.value),
+
+        price: Number(priceInput.value),
+
+        point: Number(pointInput.value),
+
+        sale: saleInput.checked
+    };
+
+    // 更新
+
+    if(currentEditId){
+
+        const index =
+            data.findIndex(v => v.id === currentEditId);
+
+        data[index] = item;
+    }
+
+    // 新規
+
+    else{
+
+        data.push(item);
+    }
+
+    modal.classList.add("hidden");
+
+    renderProductList();
+
+    if(currentProductName){
+        renderRanking(currentProductName);
+    }
+
+    downloadJson();
+};
+
+// ========================================
+// 削除
+// ========================================
+
+document.getElementById("deleteButton").onclick = () => {
+
+    if(currentEditId === null){
+        return;
+    }
+
+    data =
+        data.filter(v => v.id !== currentEditId);
+
+    modal.classList.add("hidden");
+
+    renderProductList();
+
+    if(currentProductName){
+        renderRanking(currentProductName);
+    }
+
+    downloadJson();
+};
+
+// ========================================
+// JSON保存
+// ========================================
+
+function downloadJson(){
+
+    const json =
+        JSON.stringify(data, null, 4);
+
+    const blob =
+        new Blob([json], {
+            type: "application/json"
+        });
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const a =
+        document.createElement("a");
+
+    a.href = url;
+
+    a.download = "商品データ.json";
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+// ========================================
+// 閉じる
+// ========================================
+
+document.getElementById("closeButton").onclick = () => {
+
+    modal.classList.add("hidden");
+};
+
+// ========================================
+// 初期化
+// ========================================
+
+loadJson();
+
+</script>
+
+</body>
+</html>
